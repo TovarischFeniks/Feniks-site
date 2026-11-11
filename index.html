@@ -14,6 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
   :root{
     --ivoire:#F1EBDD; --noir:#171717; --bordeaux:#792B32;
@@ -88,10 +89,26 @@
   .charte ul li{margin-bottom:.3rem;}
   .charte .final{margin-top:2.5rem; padding:1.2rem; background:var(--noir); color:#fff; text-align:center; border-radius:6px; font-family:'Playfair Display',serif; letter-spacing:.02em;}
 
-  #view-accueil, #view-charte, #view-feniks{display:none;}
+  #view-accueil, #view-charte, #view-feniks, #view-presse{display:none;}
   body[data-view="accueil"] #view-accueil{display:block;}
   body[data-view="charte"] #view-charte{display:block;}
   body[data-view="feniks"] #view-feniks{display:block;}
+  body[data-view="presse"] #view-presse{display:block;}
+
+  .auth-box{max-width:360px; margin:2.5rem auto 0; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:2rem;}
+  .auth-box h2{margin-top:0; font-size:1.3rem;}
+  .auth-box input{width:100%; padding:.7rem; margin-bottom:.8rem; border:1px solid var(--border); border-radius:4px; font-family:inherit; font-size:.9rem;}
+  .auth-box button{width:100%; padding:.8rem; background:var(--bordeaux); color:#fff; border:none; border-radius:4px; font-weight:600; cursor:pointer; font-family:inherit;}
+  .auth-box button:hover{background:var(--noir);}
+  .auth-msg{font-size:.85rem; margin-top:.8rem; text-align:center; color:var(--bordeaux);}
+  .auth-switch{text-align:center; font-size:.85rem; margin-top:1rem;}
+  .auth-switch a{color:var(--bordeaux); cursor:pointer; font-weight:600;}
+  .presse-header{max-width:820px; margin:0 auto 1.5rem; display:flex; justify-content:space-between; align-items:center; padding:2.5rem 1.5rem 0;}
+  .presse-logout{font-size:.8rem; color:var(--bordeaux); cursor:pointer; background:none; border:none; font-family:inherit; text-decoration:underline;}
+  .news-wrap{max-width:820px; margin:0 auto; padding:0 1.5rem 4rem;}
+  .news-card{background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:1rem; margin-bottom:.8rem;}
+  .news-card .src{font-size:.7rem; text-transform:uppercase; color:var(--bordeaux); font-weight:700; letter-spacing:.05em;}
+  .news-card h3{margin:.3rem 0; font-size:1rem;}
 
   .fk-page{max-width:820px; margin:0 auto; padding:2.5rem 1.5rem 4rem;}
   .fk-back{display:inline-block; margin-bottom:1.5rem; color:var(--bordeaux); text-decoration:none; font-size:.85rem; font-weight:600;}
@@ -120,6 +137,7 @@
   <span class="tabs">
     <a href="#accueil" data-tab="accueil" class="active">Accueil</a>
     <a href="#charte" data-tab="charte">Charte graphique</a>
+    <a href="#presse" data-tab="presse">Presse</a>
   </span>
 </nav>
 
@@ -245,11 +263,93 @@
 </div>
 </div>
 
+<div id="view-presse">
+  <div id="presse-auth">
+    <div class="auth-box">
+      <h2 id="auth-title">Connexion</h2>
+      <input type="email" id="auth-email" placeholder="Adresse email">
+      <input type="password" id="auth-password" placeholder="Mot de passe">
+      <button id="auth-submit">Se connecter</button>
+      <div class="auth-msg" id="auth-msg"></div>
+      <div class="auth-switch">Pas encore de compte ? <a id="auth-toggle">S'inscrire</a></div>
+    </div>
+  </div>
+  <div id="presse-content" style="display:none;">
+    <div class="presse-header">
+      <h1 style="margin:0; font-size:1.6rem;">Revue de presse</h1>
+      <button class="presse-logout" id="presse-logout">Se d&eacute;connecter</button>
+    </div>
+    <div class="news-wrap" id="news-list">
+      <p style="color:#9a9280; font-size:.9rem;">Aucune actu charg&eacute;e pour l'instant. Le bot n'a pas encore &eacute;t&eacute; branch&eacute; &agrave; cette page.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var sb = window.supabase.createClient(
+    'https://vsmvmbnneitolaepbvud.supabase.co',
+    'sb_publishable_Wd2cWPIY--jjHAzITFF3oA_iz4n_xBK'
+  );
+  var mode = 'login';
+
+  function setMsg(t){ document.getElementById('auth-msg').textContent = t; }
+
+  document.getElementById('auth-toggle').addEventListener('click', function(){
+    mode = mode === 'login' ? 'signup' : 'login';
+    document.getElementById('auth-title').textContent = mode === 'login' ? 'Connexion' : 'Inscription';
+    document.getElementById('auth-submit').textContent = mode === 'login' ? 'Se connecter' : "S'inscrire";
+    this.textContent = mode === 'login' ? "S'inscrire" : 'Se connecter';
+    document.querySelector('.auth-switch').firstChild.textContent = mode === 'login' ? 'Pas encore de compte ? ' : 'D\u00e9j\u00e0 inscrit ? ';
+    setMsg('');
+  });
+
+  document.getElementById('auth-submit').addEventListener('click', async function(){
+    var email = document.getElementById('auth-email').value.trim();
+    var password = document.getElementById('auth-password').value;
+    if(!email || !password){ setMsg('Remplis email et mot de passe.'); return; }
+    setMsg('...');
+    var res = mode === 'login'
+      ? await sb.auth.signInWithPassword({ email: email, password: password })
+      : await sb.auth.signUp({ email: email, password: password });
+    if(res.error){ setMsg(res.error.message); return; }
+    if(mode === 'signup' && !res.data.session){
+      setMsg('V\u00e9rifie ta bo\u00eete mail pour confirmer ton compte.');
+      return;
+    }
+    showPresse();
+  });
+
+  document.getElementById('presse-logout').addEventListener('click', async function(){
+    await sb.auth.signOut();
+    document.getElementById('presse-auth').style.display = 'block';
+    document.getElementById('presse-content').style.display = 'none';
+  });
+
+  async function showPresse(){
+    document.getElementById('presse-auth').style.display = 'none';
+    document.getElementById('presse-content').style.display = 'block';
+    var r = await sb.from('news_items').select('*').order('published_at', { ascending: false }).limit(30);
+    if(r.data && r.data.length){
+      document.getElementById('news-list').innerHTML = r.data.map(function(n){
+        return '<div class="news-card"><span class="src">' + n.source + '</span><h3>' + n.title + '</h3><p>' + (n.summary || '') + '</p><a href="' + n.link + '" target="_blank" rel="noopener">Lire &rarr;</a></div>';
+      }).join('');
+    }
+  }
+
+  async function checkSession(){
+    var r = await sb.auth.getSession();
+    if(r.data.session){ showPresse(); }
+  }
+  checkSession();
+})();
+</script>
+
 <script>
 (function(){
   function applyView(){
     var h = (location.hash || '#accueil').replace('#','');
-    if(['accueil','charte','feniks'].indexOf(h) === -1) h = 'accueil';
+    if(['accueil','charte','feniks','presse'].indexOf(h) === -1) h = 'accueil';
     document.body.setAttribute('data-view', h);
     document.querySelectorAll('nav a').forEach(function(a){
       a.classList.toggle('active', a.getAttribute('data-tab') === h);
