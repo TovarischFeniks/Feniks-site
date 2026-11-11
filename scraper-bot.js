@@ -43,4 +43,10 @@ async function run() {
   }
 }
 
-run();
+run().then(() => {
+  console.log('Termine.');
+  process.exit(0);
+}).catch((err) => {
+  console.error('Erreur fatale:', err);
+  process.exit(1);
+});
