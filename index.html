@@ -143,6 +143,7 @@
     <a href="#accueil" data-tab="accueil" class="active">Accueil</a>
     <a href="#charte" data-tab="charte">Charte graphique</a>
     <a href="#presse" data-tab="presse" id="nav-presse" style="display:none;">Presse</a>
+    <a href="#presse" data-tab="presse" id="nav-login" title="Connexion" style="opacity:.5;">&#128274;</a>
   </span>
 </nav>
 
@@ -335,12 +336,14 @@
     document.getElementById('presse-auth').style.display = 'block';
     document.getElementById('presse-content').style.display = 'none';
     document.getElementById('nav-presse').style.display = 'none';
+    document.getElementById('nav-login').style.display = 'inline';
   });
 
   async function showPresse(){
     document.getElementById('presse-auth').style.display = 'none';
     document.getElementById('presse-content').style.display = 'block';
     document.getElementById('nav-presse').style.display = 'inline';
+    document.getElementById('nav-login').style.display = 'none';
     var r = await sb.from('news_items').select('*').order('published_at', { ascending: false }).limit(30);
     if(r.data && r.data.length){
       document.getElementById('news-list').innerHTML = r.data.map(function(n, i){
@@ -348,7 +351,7 @@
         var dateStr = d ? d.toLocaleDateString('fr-FR') + ' \u00e0 ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}) : '';
         var tag = n.in_instagram_feed ? ' <span style="color:var(--bordeaux); font-size:.7rem;">(dans la rubrique)</span>' : '';
         return '<div class="news-card"><span class="src">' + n.source + '</span><span class="date">' + dateStr + '</span><h3>' + n.title + tag + '</h3><p>' + (n.summary || '') + '</p><a href="' + n.link + '" target="_blank" rel="noopener">Lire &rarr;</a><br>' +
-          '<button class="script-btn" data-idx="' + i + '">G\u00e9n\u00e9rer le prompt du script</button>' +
+          '<button class="script-btn" data-idx="' + i + '">G\u00e9n\u00e9rer le prompt Instagram</button>' +
           '<div class="script-out" id="script-out-' + i + '"></div>' +
           '<button class="script-copy" id="script-copy-' + i + '">Copier le prompt</button> ' +
           '<button class="script-copy" id="script-add-' + i + '" style="display:none;">Ajouter \u00e0 la rubrique Instagram</button>' +
@@ -362,7 +365,7 @@
           var out = document.getElementById('script-out-' + idx);
           var copyBtn = document.getElementById('script-copy-' + idx);
           var addBtn = document.getElementById('script-add-' + idx);
-          var prompt = "Tu es le redacteur de Feniks News (ligne editoriale : actualite/geopolitique/analyse serieuse, signature 'Feniks News - L'actualite autrement'). A partir de ce titre et ce resume, ecris un script court pour une video TikTok (100 a 150 mots) : accroche percutante, corps clair, chute, puis la signature. Reformule entierement avec tes propres mots, ne recopie jamais le texte source.\n\nTitre: " + item.title + "\nResume: " + (item.summary || '');
+          var prompt = "Tu es le redacteur de Feniks News (ligne editoriale : actualite/geopolitique/analyse serieuse, signature 'Feniks News - L'actualite autrement'). A partir de ce titre et ce resume, ecris un texte pour une publication Instagram (100 a 150 mots) : accroche percutante, corps clair, chute, puis la signature. Reformule entierement avec tes propres mots, ne recopie jamais le texte source.\n\nTitre: " + item.title + "\nResume: " + (item.summary || '');
           out.style.display = 'block';
           out.textContent = prompt;
           copyBtn.style.display = 'inline-block';
