@@ -89,11 +89,12 @@
   .charte ul li{margin-bottom:.3rem;}
   .charte .final{margin-top:2.5rem; padding:1.2rem; background:var(--noir); color:#fff; text-align:center; border-radius:6px; font-family:'Playfair Display',serif; letter-spacing:.02em;}
 
-  #view-accueil, #view-charte, #view-feniks, #view-presse{display:none;}
+  #view-accueil, #view-charte, #view-feniks, #view-presse, #view-admin{display:none;}
   body[data-view="accueil"] #view-accueil{display:block;}
   body[data-view="charte"] #view-charte{display:block;}
   body[data-view="feniks"] #view-feniks{display:block;}
   body[data-view="presse"] #view-presse{display:block;}
+  body[data-view="admin"] #view-admin{display:block;}
 
   .auth-box{max-width:360px; margin:2.5rem auto 0; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:2rem;}
   .auth-box h2{margin-top:0; font-size:1.3rem;}
@@ -143,6 +144,7 @@
     <a href="#accueil" data-tab="accueil" class="active">Accueil</a>
     <a href="#charte" data-tab="charte">Charte graphique</a>
     <a href="#presse" data-tab="presse" id="nav-presse" style="display:none;">Presse</a>
+    <a href="#admin" data-tab="admin" id="nav-admin" style="display:none;">Admin</a>
     <a href="#presse" data-tab="presse" id="nav-login" title="Connexion" style="opacity:.5;">&#128274;</a>
   </span>
 </nav>
@@ -296,6 +298,21 @@
   </div>
 </div>
 
+<div id="view-admin">
+  <div class="presse-header">
+    <h1 style="margin:0; font-size:1.6rem;">Administration</h1>
+  </div>
+  <div class="news-wrap">
+    <div class="fk-stats">
+      <div class="fk-stat"><span class="num" id="adm-visits">&mdash;</span><span class="lbl">Visites totales</span></div>
+      <div class="fk-stat"><span class="num" id="adm-news">&mdash;</span><span class="lbl">Actus collect&eacute;es</span></div>
+      <div class="fk-stat"><span class="num" id="adm-pub">&mdash;</span><span class="lbl">En rubrique Instagram</span></div>
+      <div class="fk-stat"><span class="num" id="adm-last" style="font-size:.95rem;">&mdash;</span><span class="lbl">Dernier passage du bot</span></div>
+    </div>
+    <p class="fk-note">Les visites comptent chaque chargement de page par un visiteur (pas de suivi individuel).</p>
+  </div>
+</div>
+
 <script>
 (function(){
   var sb = window.supabase.createClient(
@@ -344,6 +361,7 @@
     document.getElementById('presse-content').style.display = 'block';
     document.getElementById('nav-presse').style.display = 'inline';
     document.getElementById('nav-login').style.display = 'none';
+    document.getElementById('nav-admin').style.display = 'inline';
     var r = await sb.from('news_items').select('*').order('published_at', { ascending: false }).limit(30);
     if(r.data && r.data.length){
       document.getElementById('news-list').innerHTML = r.data.map(function(n, i){
@@ -396,9 +414,28 @@
   }
   loadInstaFeed();
 
+  async function loadAdmin(){
+    var v = await sb.from('page_views').select('*', { count: 'exact', head: true });
+    var n = await sb.from('news_items').select('*', { count: 'exact', head: true });
+    var p = await sb.from('news_items').select('*', { count: 'exact', head: true }).eq('in_instagram_feed', true);
+    var l = await sb.from('news_items').select('created_at').order('created_at', { ascending: false }).limit(1);
+    document.getElementById('adm-visits').textContent = v.count != null ? v.count : '?';
+    document.getElementById('adm-news').textContent = n.count != null ? n.count : '?';
+    document.getElementById('adm-pub').textContent = p.count != null ? p.count : '?';
+    if(l.data && l.data[0]){
+      var d = new Date(l.data[0].created_at);
+      document.getElementById('adm-last').textContent = d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+    }
+  }
+
   async function checkSession(){
     var r = await sb.auth.getSession();
     if(r.data.session){ showPresse(); }
+    sb.from('page_views').insert({}).then(function(){});
+    window.addEventListener('hashchange', function(){
+      if(location.hash === '#admin') loadAdmin();
+    });
+    if(location.hash === '#admin') loadAdmin();
   }
   checkSession();
 })();
@@ -408,7 +445,7 @@
 (function(){
   function applyView(){
     var h = (location.hash || '#accueil').replace('#','');
-    if(['accueil','charte','feniks','presse'].indexOf(h) === -1) h = 'accueil';
+    if(['accueil','charte','feniks','presse','admin'].indexOf(h) === -1) h = 'accueil';
     document.body.setAttribute('data-view', h);
     document.querySelectorAll('nav a').forEach(function(a){
       a.classList.toggle('active', a.getAttribute('data-tab') === h);
