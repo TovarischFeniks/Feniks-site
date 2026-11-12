@@ -23,16 +23,38 @@ const FEEDS = [
   { source: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml' },
 ];
 
+// Traduit un texte en français via une instance publique LibreTranslate
+// (gratuit, sans clé). Si ça échoue, on retombe sur le texte original.
+async function translateToFr(text) {
+  if (!text) return text;
+  try {
+    const res = await fetch('https://libretranslate.com/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q: text, source: 'auto', target: 'fr', format: 'text' }),
+    });
+    const data = await res.json();
+    return data.translatedText || text;
+  } catch (err) {
+    return text; // on garde l'original si la traduction échoue
+  }
+}
+
 async function run() {
   for (const feed of FEEDS) {
     try {
       const parsed = await parser.parseURL(feed.url);
       for (const item of parsed.items.slice(0, 5)) { // 5 derniers titres par source
+        const summary = (item.contentSnippet || '').slice(0, 200); // résumé court uniquement
+        const title_fr = await translateToFr(item.title);
+        const summary_fr = await translateToFr(summary);
         await supabase.from('news_items').upsert({
           source: feed.source,
           title: item.title,
+          title_fr,
           link: item.link,
-          summary: (item.contentSnippet || '').slice(0, 200), // résumé court uniquement
+          summary,
+          summary_fr,
           published_at: item.pubDate ? new Date(item.pubDate) : new Date(),
         }, { onConflict: 'link' });
       }
