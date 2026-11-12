@@ -108,7 +108,12 @@
   .news-wrap{max-width:820px; margin:0 auto; padding:0 1.5rem 4rem;}
   .news-card{background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:1rem; margin-bottom:.8rem;}
   .news-card .src{font-size:.7rem; text-transform:uppercase; color:var(--bordeaux); font-weight:700; letter-spacing:.05em;}
+  .news-card .date{font-size:.72rem; color:#9a9280; float:right;}
   .news-card h3{margin:.3rem 0; font-size:1rem;}
+  .script-btn{margin-top:.5rem; background:var(--noir); color:#fff; border:none; border-radius:20px; padding:.5rem 1rem; font-size:.78rem; font-weight:600; cursor:pointer; font-family:inherit;}
+  .script-btn:hover{background:var(--bordeaux);}
+  .script-out{display:none; margin-top:.7rem; background:var(--ivoire); border:1px dashed var(--bordeaux); border-radius:6px; padding:.8rem; font-size:.85rem; white-space:pre-wrap; line-height:1.5;}
+  .script-copy{display:none; margin-top:.5rem; background:none; border:1px solid var(--bordeaux); color:var(--bordeaux); border-radius:20px; padding:.4rem .9rem; font-size:.75rem; font-weight:600; cursor:pointer; font-family:inherit;}
 
   .fk-page{max-width:820px; margin:0 auto; padding:2.5rem 1.5rem 4rem;}
   .fk-back{display:inline-block; margin-bottom:1.5rem; color:var(--bordeaux); text-decoration:none; font-size:.85rem; font-weight:600;}
@@ -137,7 +142,7 @@
   <span class="tabs">
     <a href="#accueil" data-tab="accueil" class="active">Accueil</a>
     <a href="#charte" data-tab="charte">Charte graphique</a>
-    <a href="#presse" data-tab="presse">Presse</a>
+    <a href="#presse" data-tab="presse" id="nav-presse" style="display:none;">Presse</a>
   </span>
 </nav>
 
@@ -258,6 +263,11 @@
   </div>
   <p class="fk-note">Les stats et le dernier post sont mis &agrave; jour manuellement (Instagram ne permet pas de les r&eacute;cup&eacute;rer automatiquement). Donne-moi les chiffres et je les actualise.</p>
 
+  <div class="fk-section-title">Rubrique Instagram</div>
+  <div id="fk-insta-list">
+    <p class="fk-note">Rien pour l'instant.</p>
+  </div>
+
   <div class="fk-section-title">Le compte</div>
   <a class="fk-cta" href="https://www.instagram.com/feniksnews" target="_blank" rel="noopener">Voir sur Instagram &rarr;</a>
 </div>
@@ -324,18 +334,64 @@
     await sb.auth.signOut();
     document.getElementById('presse-auth').style.display = 'block';
     document.getElementById('presse-content').style.display = 'none';
+    document.getElementById('nav-presse').style.display = 'none';
   });
 
   async function showPresse(){
     document.getElementById('presse-auth').style.display = 'none';
     document.getElementById('presse-content').style.display = 'block';
+    document.getElementById('nav-presse').style.display = 'inline';
     var r = await sb.from('news_items').select('*').order('published_at', { ascending: false }).limit(30);
     if(r.data && r.data.length){
-      document.getElementById('news-list').innerHTML = r.data.map(function(n){
-        return '<div class="news-card"><span class="src">' + n.source + '</span><h3>' + n.title + '</h3><p>' + (n.summary || '') + '</p><a href="' + n.link + '" target="_blank" rel="noopener">Lire &rarr;</a></div>';
+      document.getElementById('news-list').innerHTML = r.data.map(function(n, i){
+        var d = n.published_at ? new Date(n.published_at) : null;
+        var dateStr = d ? d.toLocaleDateString('fr-FR') + ' \u00e0 ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}) : '';
+        var tag = n.in_instagram_feed ? ' <span style="color:var(--bordeaux); font-size:.7rem;">(dans la rubrique)</span>' : '';
+        return '<div class="news-card"><span class="src">' + n.source + '</span><span class="date">' + dateStr + '</span><h3>' + n.title + tag + '</h3><p>' + (n.summary || '') + '</p><a href="' + n.link + '" target="_blank" rel="noopener">Lire &rarr;</a><br>' +
+          '<button class="script-btn" data-idx="' + i + '">G\u00e9n\u00e9rer le prompt du script</button>' +
+          '<div class="script-out" id="script-out-' + i + '"></div>' +
+          '<button class="script-copy" id="script-copy-' + i + '">Copier le prompt</button> ' +
+          '<button class="script-copy" id="script-add-' + i + '" style="display:none;">Ajouter \u00e0 la rubrique Instagram</button>' +
+          '</div>';
+      }).join('');
+      window.__newsData = r.data;
+      document.querySelectorAll('.script-btn').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var idx = this.getAttribute('data-idx');
+          var item = window.__newsData[idx];
+          var out = document.getElementById('script-out-' + idx);
+          var copyBtn = document.getElementById('script-copy-' + idx);
+          var addBtn = document.getElementById('script-add-' + idx);
+          var prompt = "Tu es le redacteur de Feniks News (ligne editoriale : actualite/geopolitique/analyse serieuse, signature 'Feniks News - L'actualite autrement'). A partir de ce titre et ce resume, ecris un script court pour une video TikTok (100 a 150 mots) : accroche percutante, corps clair, chute, puis la signature. Reformule entierement avec tes propres mots, ne recopie jamais le texte source.\n\nTitre: " + item.title + "\nResume: " + (item.summary || '');
+          out.style.display = 'block';
+          out.textContent = prompt;
+          copyBtn.style.display = 'inline-block';
+          addBtn.style.display = 'inline-block';
+          copyBtn.onclick = function(){ navigator.clipboard.writeText(out.textContent); copyBtn.textContent = 'Copi\u00e9 !'; setTimeout(function(){ copyBtn.textContent = 'Copier le prompt'; }, 1500); };
+          addBtn.onclick = async function(){
+            var up = await sb.from('news_items').update({ in_instagram_feed: true }).eq('id', item.id);
+            if(up.error){ addBtn.textContent = 'Erreur'; return; }
+            addBtn.textContent = 'Ajout\u00e9 !';
+            item.in_instagram_feed = true;
+          };
+        });
+      });
+    }
+  }
+
+  async function loadInstaFeed(){
+    var el = document.getElementById('fk-insta-list');
+    if(!el) return;
+    var r = await sb.from('news_items').select('*').eq('in_instagram_feed', true).order('published_at', { ascending: false }).limit(10);
+    if(r.data && r.data.length){
+      el.innerHTML = r.data.map(function(n){
+        var d = n.published_at ? new Date(n.published_at) : null;
+        var dateStr = d ? d.toLocaleDateString('fr-FR') + ' \u00e0 ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}) : '';
+        return '<div class="news-card"><span class="src">' + n.source + '</span><span class="date">' + dateStr + '</span><h3>' + n.title + '</h3><p>' + (n.summary || '') + '</p><a href="' + n.link + '" target="_blank" rel="noopener">Lire &rarr;</a></div>';
       }).join('');
     }
   }
+  loadInstaFeed();
 
   async function checkSession(){
     var r = await sb.auth.getSession();
