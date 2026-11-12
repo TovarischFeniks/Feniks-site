@@ -374,7 +374,15 @@
         var d = n.published_at ? new Date(n.published_at) : null;
         var dateStr = d ? d.toLocaleDateString('fr-FR') + ' \u00e0 ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}) : '';
         var tag = n.in_instagram_feed ? ' <span style="color:var(--bordeaux); font-size:.7rem;">(dans la rubrique)</span>' : '';
-        return '<div class="news-card"><span class="src">' + n.source + '</span><span class="date">' + dateStr + '</span><h3>' + n.title + tag + '</h3><p>' + (n.summary || '') + '</p><a href="' + n.link + '" target="_blank" rel="noopener">Lire &rarr;</a><br>' +
+        var titleFr = n.title_fr || n.title;
+        var summaryFr = n.summary_fr || n.summary;
+        return '<div class="news-card"><span class="src">' + n.source + '</span><span class="date">' + dateStr + '</span>' +
+          '<h3 class="t-fr" id="t-fr-' + i + '">' + titleFr + tag + '</h3>' +
+          '<h3 class="t-orig" id="t-orig-' + i + '" style="display:none;">' + n.title + tag + '</h3>' +
+          '<p class="t-fr" id="s-fr-' + i + '">' + (summaryFr || '') + '</p>' +
+          '<p class="t-orig" id="s-orig-' + i + '" style="display:none;">' + (n.summary || '') + '</p>' +
+          '<a href="' + n.link + '" target="_blank" rel="noopener">Lire &rarr;</a> &middot; ' +
+          '<button class="script-copy lang-toggle" data-idx="' + i + '" style="display:inline-block;">Voir en langue originale</button><br>' +
           '<button class="script-btn" data-idx="' + i + '">G\u00e9n\u00e9rer le prompt Instagram</button>' +
           '<div class="script-out" id="script-out-' + i + '"></div>' +
           '<button class="script-copy" id="script-copy-' + i + '">Copier le prompt</button> ' +
@@ -382,6 +390,17 @@
           '</div>';
       }).join('');
       window.__newsData = r.data;
+      document.querySelectorAll('.lang-toggle').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var idx = this.getAttribute('data-idx');
+          var showOrig = document.getElementById('t-orig-' + idx).style.display === 'none';
+          document.getElementById('t-fr-' + idx).style.display = showOrig ? 'none' : 'block';
+          document.getElementById('t-orig-' + idx).style.display = showOrig ? 'block' : 'none';
+          document.getElementById('s-fr-' + idx).style.display = showOrig ? 'none' : 'block';
+          document.getElementById('s-orig-' + idx).style.display = showOrig ? 'block' : 'none';
+          this.textContent = showOrig ? 'Voir en fran\u00e7ais' : 'Voir en langue originale';
+        });
+      });
       document.querySelectorAll('.script-btn').forEach(function(btn){
         btn.addEventListener('click', function(){
           var idx = this.getAttribute('data-idx');
@@ -389,7 +408,7 @@
           var out = document.getElementById('script-out-' + idx);
           var copyBtn = document.getElementById('script-copy-' + idx);
           var addBtn = document.getElementById('script-add-' + idx);
-          var prompt = "Tu es le redacteur de Feniks News (ligne editoriale : actualite/geopolitique/analyse serieuse, signature 'Feniks News - L'actualite autrement'). A partir de ce titre et ce resume, ecris un texte pour une publication Instagram (100 a 150 mots) : accroche percutante, corps clair, chute, puis la signature. Reformule entierement avec tes propres mots, ne recopie jamais le texte source.\n\nTitre: " + item.title + "\nResume: " + (item.summary || '');
+          var prompt = "Tu es le redacteur de Feniks News (ligne editoriale : actualite/geopolitique/analyse serieuse, signature 'Feniks News - L'actualite autrement'). Ecris en francais. A partir de ce titre et ce resume (deja en francais), ecris un texte pour une publication Instagram (100 a 150 mots) : accroche percutante, corps clair, chute, puis la signature. Reformule entierement avec tes propres mots, ne recopie jamais le texte source.\n\nTitre: " + (item.title_fr || item.title) + "\nResume: " + (item.summary_fr || item.summary || '');
           out.style.display = 'block';
           out.textContent = prompt;
           copyBtn.style.display = 'inline-block';
@@ -414,7 +433,7 @@
       el.innerHTML = r.data.map(function(n){
         var d = n.published_at ? new Date(n.published_at) : null;
         var dateStr = d ? d.toLocaleDateString('fr-FR') + ' \u00e0 ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}) : '';
-        return '<div class="news-card"><span class="src">' + n.source + '</span><span class="date">' + dateStr + '</span><h3>' + n.title + '</h3><p>' + (n.summary || '') + '</p><a href="' + n.link + '" target="_blank" rel="noopener">Lire &rarr;</a></div>';
+        return '<div class="news-card"><span class="src">' + n.source + '</span><span class="date">' + dateStr + '</span><h3>' + (n.title_fr || n.title) + '</h3><p>' + (n.summary_fr || n.summary || '') + '</p><a href="' + n.link + '" target="_blank" rel="noopener">Lire &rarr;</a></div>';
       }).join('');
     }
   }
