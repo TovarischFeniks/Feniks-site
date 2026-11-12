@@ -319,6 +319,7 @@
     'https://vsmvmbnneitolaepbvud.supabase.co',
     'sb_publishable_Wd2cWPIY--jjHAzITFF3oA_iz4n_xBK'
   );
+  var OWNER_EMAIL = 'feniks.tovarisch@gmail.com';
   var mode = 'login';
 
   function setMsg(t){ document.getElementById('auth-msg').textContent = t; }
@@ -343,6 +344,11 @@
     if(res.error){ setMsg(res.error.message); return; }
     if(mode === 'signup' && !res.data.session){
       setMsg('V\u00e9rifie ta bo\u00eete mail pour confirmer ton compte.');
+      return;
+    }
+    if(res.data.session && res.data.session.user.email !== OWNER_EMAIL){
+      await sb.auth.signOut();
+      setMsg("Cet espace n'est pas accessible avec ce compte.");
       return;
     }
     showPresse();
@@ -430,7 +436,8 @@
 
   async function checkSession(){
     var r = await sb.auth.getSession();
-    if(r.data.session){ showPresse(); }
+    if(r.data.session && r.data.session.user.email === OWNER_EMAIL){ showPresse(); }
+    else if(r.data.session){ await sb.auth.signOut(); }
     sb.from('page_views').insert({}).then(function(){});
     window.addEventListener('hashchange', function(){
       if(location.hash === '#admin') loadAdmin();
