@@ -116,6 +116,22 @@
   .script-out{display:none; margin-top:.7rem; background:var(--ivoire); border:1px dashed var(--bordeaux); border-radius:6px; padding:.8rem; font-size:.85rem; white-space:pre-wrap; line-height:1.5;}
   .script-copy{display:none; margin-top:.5rem; background:none; border:1px solid var(--bordeaux); color:var(--bordeaux); border-radius:20px; padding:.4rem .9rem; font-size:.75rem; font-weight:600; cursor:pointer; font-family:inherit;}
 
+  .insta-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1.1rem;}
+  .insta-card{background:var(--noir); border-radius:10px; overflow:hidden; position:relative; display:flex; flex-direction:column; transition:transform .15s ease; border-left:5px solid var(--rouge);}
+  .insta-card:hover{transform:translateY(-3px);}
+  .insta-card .ic-top{padding:1.1rem 1.1rem .4rem;}
+  .insta-card .ic-cat{display:inline-block; background:var(--bordeaux); color:#fff; font-size:.68rem; text-transform:uppercase; letter-spacing:.08em; font-weight:700; padding:.25rem .6rem; border-radius:2px; margin-bottom:.6rem;}
+  .insta-card .ic-src{font-size:.68rem; text-transform:uppercase; letter-spacing:.07em; color:var(--rouge); font-weight:700;}
+  .insta-card .ic-date{font-size:.68rem; color:var(--champagne); opacity:.8; float:right;}
+  .insta-card h3{color:#fff; font-size:1.15rem; margin:.5rem 0 .4rem; line-height:1.3; font-family:'Playfair Display',serif; font-weight:700;}
+  .insta-card p{color:var(--champagne); font-size:.85rem; line-height:1.5; margin:0 0 1rem; padding:0 1.1rem;}
+  .insta-card .ic-actions{margin-top:auto; padding:.9rem 1.1rem; background:rgba(255,255,255,.04); display:flex; justify-content:space-between; align-items:center;}
+  .insta-card .ic-actions a{color:#fff; font-size:.78rem; font-weight:600; text-decoration:none;}
+  .insta-card .ic-actions a:hover{color:var(--rouge);}
+  .insta-share{background:none; border:1px solid rgba(255,255,255,.3); color:var(--champagne); border-radius:16px; padding:.35rem .8rem; font-size:.72rem; cursor:pointer; font-family:inherit;}
+  .insta-share:hover{border-color:var(--rouge); color:#fff;}
+  .insta-empty{grid-column:1/-1; text-align:center; color:#9a9280; padding:2rem 0; font-size:.9rem;}
+
   .fk-page{max-width:820px; margin:0 auto; padding:2.5rem 1.5rem 4rem;}
   .fk-back{display:inline-block; margin-bottom:1.5rem; color:var(--bordeaux); text-decoration:none; font-size:.85rem; font-weight:600;}
   .fk-hero{background:var(--noir); border-radius:8px; padding:2rem 1.5rem; text-align:center; margin-bottom:2rem;}
@@ -267,8 +283,8 @@
   <p class="fk-note">Les stats et le dernier post sont mis &agrave; jour manuellement (Instagram ne permet pas de les r&eacute;cup&eacute;rer automatiquement). Donne-moi les chiffres et je les actualise.</p>
 
   <div class="fk-section-title">Rubrique Instagram</div>
-  <div id="fk-insta-list">
-    <p class="fk-note">Rien pour l'instant.</p>
+  <div id="fk-insta-list" class="insta-grid">
+    <p class="insta-empty">Rien pour l'instant.</p>
   </div>
 
   <div class="fk-section-title">Le compte</div>
@@ -415,10 +431,13 @@
           addBtn.style.display = 'inline-block';
           copyBtn.onclick = function(){ navigator.clipboard.writeText(out.textContent); copyBtn.textContent = 'Copi\u00e9 !'; setTimeout(function(){ copyBtn.textContent = 'Copier le prompt'; }, 1500); };
           addBtn.onclick = async function(){
-            var up = await sb.from('news_items').update({ in_instagram_feed: true }).eq('id', item.id);
+            var cat = prompt('Cat\u00e9gorie (ex: ITALIE | S\u00c9CURIT\u00c9) :', item.category || '');
+            if(cat === null) return;
+            var up = await sb.from('news_items').update({ in_instagram_feed: true, category: cat }).eq('id', item.id);
             if(up.error){ addBtn.textContent = 'Erreur'; return; }
             addBtn.textContent = 'Ajout\u00e9 !';
             item.in_instagram_feed = true;
+            item.category = cat;
           };
         });
       });
@@ -430,11 +449,28 @@
     if(!el) return;
     var r = await sb.from('news_items').select('*').eq('in_instagram_feed', true).order('published_at', { ascending: false }).limit(10);
     if(r.data && r.data.length){
-      el.innerHTML = r.data.map(function(n){
+      el.innerHTML = r.data.map(function(n, i){
         var d = n.published_at ? new Date(n.published_at) : null;
-        var dateStr = d ? d.toLocaleDateString('fr-FR') + ' \u00e0 ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}) : '';
-        return '<div class="news-card"><span class="src">' + n.source + '</span><span class="date">' + dateStr + '</span><h3>' + (n.title_fr || n.title) + '</h3><p>' + (n.summary_fr || n.summary || '') + '</p><a href="' + n.link + '" target="_blank" rel="noopener">Lire &rarr;</a></div>';
+        var dateStr = d ? d.toLocaleDateString('fr-FR', {day:'numeric', month:'short'}) + ' \u00b7 ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}) : '';
+        return '<div class="insta-card">' +
+          '<div class="ic-top">' + (n.category ? '<span class="ic-cat">' + n.category + '</span><br>' : '') + '<span class="ic-src">' + n.source + '</span><span class="ic-date">' + dateStr + '</span>' +
+          '<h3>' + (n.title_fr || n.title) + '</h3></div>' +
+          '<p>' + (n.summary_fr || n.summary || '') + '</p>' +
+          '<div class="ic-actions"><a href="' + n.link + '" target="_blank" rel="noopener">Lire l\'article &rarr;</a>' +
+          '<button class="insta-share" data-link="' + n.link + '">Partager</button></div>' +
+          '</div>';
       }).join('');
+      el.querySelectorAll('.insta-share').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var link = this.getAttribute('data-link');
+          navigator.clipboard.writeText(link);
+          this.textContent = 'Lien copi\u00e9 !';
+          var self = this;
+          setTimeout(function(){ self.textContent = 'Partager'; }, 1500);
+        });
+      });
+    } else {
+      el.innerHTML = '<p class="insta-empty">Rien pour l\'instant.</p>';
     }
   }
   loadInstaFeed();
