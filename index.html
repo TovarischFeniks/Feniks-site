@@ -3,14 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Feniks News &amp; Projets | Actualité autrement</title>
-<meta name="description" content="Feniks News : actualité, géopolitique et analyse autrement. Retrouvez aussi les projets de jeux en développement.">
-<meta name="keywords" content="Feniks News, actualité, news, géopolitique, Instagram, jeux vidéo, projets">
-<meta name="robots" content="index, follow">
-<meta property="og:title" content="Feniks News &amp; Projets">
-<meta property="og:description" content="L'actualité autrement. Découvrez Feniks News et les autres projets en cours.">
-<meta property="og:type" content="website">
-<meta name="twitter:card" content="summary">
+<title>Mes Projets</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📰</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -36,10 +30,14 @@
     position:sticky; top:0; z-index:10;
     background:var(--ivoire); border-bottom:2px solid var(--bordeaux);
     padding:1rem 1.5rem; padding-top:calc(1rem + env(safe-area-inset-top,0px));
-    display:flex; justify-content:space-between; align-items:center;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.6rem;
   }
   nav .brand{font-family:'Playfair Display',serif; font-weight:700; font-size:1.1rem; letter-spacing:.03em;}
-  nav .tabs{display:flex; gap:1.5rem;}
+  nav .tabs{display:flex; gap:1.2rem; flex-wrap:wrap; row-gap:.4rem;}
+  @media (max-width:480px){
+    nav .tabs{gap:.8rem;}
+    nav a{font-size:.75rem;}
+  }
   nav a{
     color:var(--noir); text-decoration:none; font-size:.85rem; font-weight:600;
     letter-spacing:.06em; text-transform:uppercase; padding:.3rem 0;
@@ -180,6 +178,7 @@
       <p>L'actualit&eacute; autrement.</p>
       <span class="link">Voir sur Instagram &rarr;</span>
       <span class="last-post" id="last-post">Dernier post : aujourd'hui</span>
+      <span class="last-post" id="insta-count"></span>
     </a>
 
   </div>
@@ -490,11 +489,20 @@
     }
   }
 
+  async function loadHomeBadge(){
+    var el = document.getElementById('insta-count');
+    if(!el) return;
+    var p = await sb.from('news_items').select('*', { count: 'exact', head: true }).eq('in_instagram_feed', true);
+    if(p.count){ el.textContent = p.count + ' article' + (p.count > 1 ? 's' : '') + ' en rubrique'; }
+  }
+  loadHomeBadge();
+
   async function checkSession(){
     var r = await sb.auth.getSession();
-    if(r.data.session && r.data.session.user.email === OWNER_EMAIL){ showPresse(); }
+    var isOwner = r.data.session && r.data.session.user.email === OWNER_EMAIL;
+    if(isOwner){ showPresse(); }
     else if(r.data.session){ await sb.auth.signOut(); }
-    sb.from('page_views').insert({}).then(function(){});
+    if(!isOwner){ sb.from('page_views').insert({}).then(function(){}); }
     window.addEventListener('hashchange', function(){
       if(location.hash === '#admin') loadAdmin();
     });
