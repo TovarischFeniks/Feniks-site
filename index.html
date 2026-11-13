@@ -134,9 +134,10 @@
 
   .fk-page{max-width:820px; margin:0 auto; padding:2.5rem 1.5rem 4rem;}
   .fk-back{display:inline-block; margin-bottom:1.5rem; color:var(--bordeaux); text-decoration:none; font-size:.85rem; font-weight:600;}
-  .fk-hero{background:var(--noir); border-radius:8px; padding:2rem 1.5rem; text-align:center; margin-bottom:2rem;}
-  .fk-hero img{width:150px; max-width:60%; height:auto; margin-bottom:.8rem;}
-  .fk-hero p{color:var(--champagne); margin:0; font-style:italic;}
+  .fk-hero{background:var(--noir); border-radius:8px; padding:2.5rem 1.5rem; text-align:center; margin-bottom:2.5rem; position:relative; overflow:hidden; border-top:4px solid var(--rouge);}
+  .fk-hero::before{content:""; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:linear-gradient(135deg, transparent 48%, var(--rouge) 49%, var(--rouge) 51%, transparent 52%); opacity:.5;}
+  .fk-hero img{width:150px; max-width:60%; height:auto; margin-bottom:1rem; position:relative;}
+  .fk-hero p{color:var(--champagne); margin:0 0 1.3rem; font-style:italic; position:relative;}
   .fk-stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:1rem; margin-bottom:2rem;}
   .fk-stat{background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:1.1rem; text-align:center;}
   .fk-stat .num{font-family:'Playfair Display',serif; font-size:1.5rem; color:var(--bordeaux); display:block;}
@@ -148,8 +149,8 @@
   .fk-post .meta{flex:1; min-width:180px;}
   .fk-post .meta .date{font-size:.75rem; color:var(--bordeaux); font-weight:600; text-transform:uppercase; letter-spacing:.05em;}
   .fk-post .meta p{margin:.3rem 0 0; font-size:.9rem; color:#4a4538;}
-  .fk-cta{display:inline-block; margin-top:2rem; background:var(--bordeaux); color:#fff; text-decoration:none; padding:.8rem 1.6rem; border-radius:30px; font-weight:600; font-size:.9rem; letter-spacing:.02em;}
-  .fk-cta:hover{background:var(--noir);}
+  .fk-cta{display:inline-block; background:var(--rouge); color:#fff; text-decoration:none; padding:.9rem 2rem; border-radius:30px; font-weight:700; font-size:.92rem; letter-spacing:.03em; position:relative; transition:background .15s ease;}
+  .fk-cta:hover{background:#fff; color:var(--noir);}
   .fk-note{font-size:.8rem; color:#9a9280; margin-top:.6rem;}
 </style>
 </head>
