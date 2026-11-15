@@ -23,21 +23,25 @@ const FEEDS = [
   { source: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml' },
 ];
 
-// Traduit un texte en français via une instance publique LibreTranslate
-// (gratuit, sans clé). Si ça échoue, on retombe sur le texte original.
+// Traduit un texte en français via l'API publique MyMemory
+// (gratuite, sans clé, limite ~500 requêtes/jour sans clé — largement
+// suffisant ici). Si ça échoue, on retombe sur le texte original.
 async function translateToFr(text) {
   if (!text) return text;
   try {
-    const res = await fetch('https://libretranslate.com/translate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q: text, source: 'auto', target: 'fr', format: 'text' }),
-    });
+    const q = encodeURIComponent(text.slice(0, 450)); // limite de l'API
+    const res = await fetch(`https://api.mymemory.translated.net/get?q=${q}&langpair=en|fr`);
     const data = await res.json();
-    return data.translatedText || text;
+    const translated = data && data.responseData && data.responseData.translatedText;
+    return translated || text;
   } catch (err) {
     return text; // on garde l'original si la traduction échoue
   }
+}
+
+// Pour ne pas traduire inutilement un texte déjà en français
+function looksFrench(source) {
+  return source === 'Le Monde' || source === 'France 24';
 }
 
 async function run() {
@@ -46,8 +50,9 @@ async function run() {
       const parsed = await parser.parseURL(feed.url);
       for (const item of parsed.items.slice(0, 5)) { // 5 derniers titres par source
         const summary = (item.contentSnippet || '').slice(0, 200); // résumé court uniquement
-        const title_fr = await translateToFr(item.title);
-        const summary_fr = await translateToFr(summary);
+        const alreadyFr = looksFrench(feed.source);
+        const title_fr = alreadyFr ? item.title : await translateToFr(item.title);
+        const summary_fr = alreadyFr ? summary : await translateToFr(summary);
         await supabase.from('news_items').upsert({
           source: feed.source,
           title: item.title,
