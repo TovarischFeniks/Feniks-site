@@ -624,10 +624,17 @@
     });
     y += 10;
 
-    // image uploadee
+    // intro (mesure d'abord sa hauteur pour calculer l'espace restant pour l'image)
+    var intro = document.getElementById('p-intro').value || '';
+    ctx.font = "italic 30px 'Playfair Display', Georgia, serif";
+    var introLines = intro ? wrapLines(ctx, intro, W-150) : [];
+    var introH = intro ? (introLines.length*42+30) : 0;
+    var RESERVED_BOTTOM = 170 + introH; // signature + marge + intro
+
+    // image uploadee : occupe tout l'espace restant, comme sur les vraies affiches
     y += 20;
     if(posterImg){
-      var imgH = 420;
+      var imgH = Math.max(320, H - y - RESERVED_BOTTOM);
       var ratio = Math.max((W-90)/posterImg.width, imgH/posterImg.height);
       var dw = posterImg.width*ratio, dh = posterImg.height*ratio;
       ctx.save();
@@ -638,11 +645,8 @@
     }
 
     // intro
-    var intro = document.getElementById('p-intro').value || '';
     if(intro){
       ctx.font = "italic 30px 'Playfair Display', Georgia, serif";
-      ctx.fillStyle = '#171717';
-      var introLines = wrapLines(ctx, intro, W-150);
       ctx.fillStyle = '#792B32';
       ctx.fillRect(45, y-32, 8, introLines.length*42+10);
       ctx.fillStyle = '#171717';
