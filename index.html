@@ -504,7 +504,15 @@
   var posterImg = null;
   var LOGO_SRC = document.querySelector('.feniks-logo') ? document.querySelector('.feniks-logo').src : '';
   var logoImgEl = new Image();
+  logoImgEl.onload = function(){ drawPoster(); };
   if(LOGO_SRC) logoImgEl.src = LOGO_SRC;
+  var FONTS_READY = false;
+  if(document.fonts && document.fonts.ready){
+    document.fonts.load('700 62px "Playfair Display"').then(function(){
+      document.fonts.load('italic 30px "Playfair Display"');
+      return document.fonts.ready;
+    }).then(function(){ FONTS_READY = true; drawPoster(); });
+  }
 
   function wrapLines(ctx, text, maxWidth){
     var words = text.split(' ');
@@ -543,7 +551,7 @@
     if(logoImgEl.complete && logoImgEl.naturalWidth){
       var lw = 180, lh = lw * (logoImgEl.naturalHeight/logoImgEl.naturalWidth);
       ctx.drawImage(logoImgEl, 45, 35, lw, lh);
-      ctx.font = 'italic 20px Georgia, serif';
+      ctx.font = "italic 20px 'Playfair Display', Georgia, serif";
       ctx.fillStyle = '#171717';
       ctx.fillText("L'actualit\u00e9 autrement.", 48, 35+lh+28);
       ctx.strokeStyle = '#792B32'; ctx.lineWidth = 2;
@@ -553,7 +561,7 @@
     // bandeau categorie + date
     var cat = (document.getElementById('p-category').value || '').toUpperCase();
     if(cat){
-      ctx.font = '700 26px Georgia, serif';
+      ctx.font = "700 26px 'Playfair Display', Georgia, serif";
       var catW = ctx.measureText(cat).width + 60;
       var catX = W - catW - 50;
       ctx.fillStyle = '#792B32';
@@ -565,9 +573,9 @@
     }
     var dateVal = document.getElementById('p-date').value || '';
     if(dateVal){
-      ctx.font = '700 26px Georgia, serif';
+      ctx.font = "700 26px 'Playfair Display', Georgia, serif";
       var catWidthPx = cat ? ctx.measureText(cat).width + 60 : 220;
-      ctx.font = '700 22px Georgia, serif';
+      ctx.font = "700 22px 'Playfair Display', Georgia, serif";
       ctx.fillStyle = '#171717';
       ctx.textAlign = 'center';
       var catXPos = W - catWidthPx - 50;
@@ -580,29 +588,40 @@
       ctx.textAlign = 'left';
     }
 
-    // titre
+    // titre (taille auto-ajustee pour ne jamais deborder)
     var rawTitle = document.getElementById('p-title').value || '';
     var titleLines = rawTitle.split('\n').filter(function(l){ return l.trim(); });
-    var y = 230;
-    titleLines.forEach(function(line){
-      var highlight = /^\*\*(.*)\*\*$/.test(line.trim());
-      var clean = line.replace(/\*\*/g,'').trim();
-      ctx.font = '700 62px Georgia, serif';
-      var wrapped = wrapLines(ctx, clean.toUpperCase(), W-110);
-      wrapped.forEach(function(wl){
-        var tw2 = ctx.measureText(wl).width;
-        if(highlight){
-          ctx.fillStyle = '#792B32';
-          ctx.fillRect(45, y-56, tw2+40, 72);
-          ctx.fillStyle = '#fff';
-          ctx.fillText(wl, 65, y);
-        } else {
-          ctx.fillStyle = '#171717';
-          ctx.fillText(wl, 45, y);
-        }
-        y += 78;
+    var TITLE_MAX_H = 560; // espace maximum reserve au titre
+    var fontSize = 62, lineH = 78, allWrapped = [];
+    for(; fontSize >= 32; fontSize -= 4){
+      lineH = Math.round(fontSize * 1.26);
+      ctx.font = "700 " + fontSize + "px 'Playfair Display', Georgia, serif";
+      allWrapped = [];
+      titleLines.forEach(function(line){
+        var highlight = /^\*\*(.*)\*\*$/.test(line.trim());
+        var clean = line.replace(/\*\*/g,'').trim();
+        wrapLines(ctx, clean.toUpperCase(), W-110).forEach(function(wl){
+          allWrapped.push({ text: wl, highlight: highlight });
+        });
       });
+      if(allWrapped.length * lineH <= TITLE_MAX_H) break;
+    }
+    var y = 230;
+    ctx.font = "700 " + fontSize + "px 'Playfair Display', Georgia, serif";
+    allWrapped.forEach(function(item){
+      var tw2 = ctx.measureText(item.text).width;
+      if(item.highlight){
+        ctx.fillStyle = '#792B32';
+        ctx.fillRect(45, y-fontSize*0.78, tw2+40, fontSize*1.16);
+        ctx.fillStyle = '#fff';
+        ctx.fillText(item.text, 65, y);
+      } else {
+        ctx.fillStyle = '#171717';
+        ctx.fillText(item.text, 45, y);
+      }
+      y += lineH;
     });
+    y += 10;
 
     // image uploadee
     y += 20;
@@ -620,7 +639,7 @@
     // intro
     var intro = document.getElementById('p-intro').value || '';
     if(intro){
-      ctx.font = 'italic 30px Georgia, serif';
+      ctx.font = "italic 30px 'Playfair Display', Georgia, serif";
       ctx.fillStyle = '#171717';
       var introLines = wrapLines(ctx, intro, W-150);
       ctx.fillStyle = '#792B32';
@@ -632,7 +651,7 @@
     // signature bas de page
     var sigY = H - 90;
     ctx.strokeStyle = '#792B32'; ctx.lineWidth = 2;
-    ctx.font = '700 28px Georgia, serif';
+    ctx.font = "700 28px 'Playfair Display', Georgia, serif";
     ctx.fillStyle = '#792B32';
     ctx.textAlign = 'center';
     var sig = 'F E N I K S   N E W S';
@@ -640,7 +659,7 @@
     ctx.fillText(sig, W/2, sigY);
     ctx.beginPath(); ctx.moveTo(90, sigY-10); ctx.lineTo(W/2-sw/2-20, sigY-10); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(W/2+sw/2+20, sigY-10); ctx.lineTo(W-90, sigY-10); ctx.stroke();
-    ctx.font = 'italic 20px Georgia, serif';
+    ctx.font = "italic 20px 'Playfair Display', Georgia, serif";
     ctx.fillText("L'actualit\u00e9 autrement.", W/2, sigY+30);
     ctx.textAlign = 'left';
   }
