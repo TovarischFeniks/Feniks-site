@@ -534,29 +534,29 @@
     ctx.clearRect(0,0,W,H);
     ctx.fillStyle = '#F1EBDD'; ctx.fillRect(0,0,W,H);
 
-    // coins diagonaux
-    ctx.save();
-    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(170,0); ctx.lineTo(0,170); ctx.closePath();
-    ctx.fillStyle = '#171717'; ctx.fill();
-    ctx.strokeStyle = '#E00018'; ctx.lineWidth = 6;
-    ctx.beginPath(); ctx.moveTo(60,0); ctx.lineTo(0,60); ctx.stroke();
-    ctx.restore();
-    ctx.save();
-    ctx.beginPath(); ctx.moveTo(W,H); ctx.lineTo(W-170,H); ctx.lineTo(W,H-170); ctx.closePath();
-    ctx.fillStyle = '#171717'; ctx.fill();
-    ctx.strokeStyle = '#E00018'; ctx.lineWidth = 6;
-    ctx.beginPath(); ctx.moveTo(W-60,H); ctx.lineTo(W,H-60); ctx.stroke();
-    ctx.restore();
+    // coins diagonaux (fins, type bandeau d'angle)
+    function cornerAccent(x0,y0,x1,y1,x2,y2, lx1,ly1,lx2,ly2){
+      ctx.save();
+      ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.lineTo(x2,y2); ctx.closePath();
+      ctx.fillStyle = '#171717'; ctx.fill();
+      ctx.strokeStyle = '#E00018'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(lx1,ly1); ctx.lineTo(lx2,ly2); ctx.stroke();
+      ctx.restore();
+    }
+    cornerAccent(0,0, 130,0, 0,130, 42,0, 0,42);
+    cornerAccent(W,H, W-130,H, W,H-130, W-42,H, W,H-42);
 
     // logo + tagline
+    var logoBottom = 160;
     if(logoImgEl.complete && logoImgEl.naturalWidth){
-      var lw = 180, lh = lw * (logoImgEl.naturalHeight/logoImgEl.naturalWidth);
-      ctx.drawImage(logoImgEl, 45, 35, lw, lh);
-      ctx.font = "italic 20px 'Playfair Display', Georgia, serif";
+      var lw = 260, lh = lw * (logoImgEl.naturalHeight/logoImgEl.naturalWidth);
+      ctx.drawImage(logoImgEl, 45, 30, lw, lh);
+      ctx.font = "italic 21px 'Playfair Display', Georgia, serif";
       ctx.fillStyle = '#171717';
-      ctx.fillText("L'actualit\u00e9 autrement.", 48, 35+lh+28);
+      ctx.fillText("L'actualit\u00e9 autrement.", 48, 30+lh+26);
       ctx.strokeStyle = '#792B32'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(45, 35+lh+40); ctx.lineTo(45+260, 35+lh+40); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(45, 30+lh+38); ctx.lineTo(45+280, 30+lh+38); ctx.stroke();
+      logoBottom = 30+lh+38;
     }
 
     // bandeau categorie + date
@@ -592,10 +592,11 @@
     // titre (taille auto-ajustee pour ne jamais deborder)
     var rawTitle = document.getElementById('p-title').value || '';
     var titleLines = rawTitle.split('\n').filter(function(l){ return l.trim(); });
-    var TITLE_MAX_H = 560; // espace maximum reserve au titre
-    var fontSize = 62, lineH = 78, allWrapped = [];
-    for(; fontSize >= 32; fontSize -= 4){
-      lineH = Math.round(fontSize * 1.26);
+    var titleStartY = Math.max(logoBottom + 70, 230);
+    var TITLE_MAX_H = H - titleStartY - 520; // espace reserve au titre avant image/intro/signature
+    var fontSize = 64, lineH = 72, allWrapped = [];
+    for(; fontSize >= 30; fontSize -= 4){
+      lineH = Math.round(fontSize * 1.08);
       ctx.font = "700 " + fontSize + "px 'Playfair Display', Georgia, serif";
       allWrapped = [];
       titleLines.forEach(function(line){
@@ -607,13 +608,13 @@
       });
       if(allWrapped.length * lineH <= TITLE_MAX_H) break;
     }
-    var y = 230;
+    var y = titleStartY;
     ctx.font = "700 " + fontSize + "px 'Playfair Display', Georgia, serif";
     allWrapped.forEach(function(item){
       var tw2 = ctx.measureText(item.text).width;
       if(item.highlight){
         ctx.fillStyle = '#792B32';
-        ctx.fillRect(45, y-fontSize*0.78, tw2+40, fontSize*1.16);
+        ctx.fillRect(45, y-fontSize*0.76, tw2+40, fontSize*1.0);
         ctx.fillStyle = '#fff';
         ctx.fillText(item.text, 65, y);
       } else {
